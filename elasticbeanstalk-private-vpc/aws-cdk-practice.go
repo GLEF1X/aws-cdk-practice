@@ -50,11 +50,14 @@ func NewAwsCdkPracticeStack(scope constructs.Construct, id string, props *AwsCdk
 	})
 
 	elasticBeanStalkEC2Role := awsiam.NewRole(stack, jsii.String("ElasticBeanstalkEC2Role"), &awsiam.RoleProps{
-		RoleName:  jsii.String("practice-aws-elasticbeanstalk-ec2-role"),
 		AssumedBy: awsiam.NewServicePrincipal(jsii.String("ec2.amazonaws.com"), &awsiam.ServicePrincipalOpts{}),
 		ManagedPolicies: &[]awsiam.IManagedPolicy{
 			awsiam.ManagedPolicy_FromAwsManagedPolicyName(jsii.String("AWSElasticBeanstalkWebTier")),
 		},
+	})
+
+	ec2InstanceProfile := awsiam.NewInstanceProfile(stack, jsii.String("ElasticBeanstalkInstanceProfile"), &awsiam.InstanceProfileProps{
+		Role: elasticBeanStalkEC2Role,
 	})
 
 	elbZipArchive := awss3assets.NewAsset(stack, jsii.String("PracticeGoAppAsset"), &awss3assets.AssetProps{
@@ -102,7 +105,7 @@ func NewAwsCdkPracticeStack(scope constructs.Construct, id string, props *AwsCdk
 			{
 				Namespace:  jsii.String("aws:autoscaling:launchconfiguration"),
 				OptionName: jsii.String("IamInstanceProfile"),
-				Value:      elasticBeanStalkEC2Role.RoleName(),
+				Value:      ec2InstanceProfile.InstanceProfileName(),
 			},
 		},
 	})
@@ -111,7 +114,6 @@ func NewAwsCdkPracticeStack(scope constructs.Construct, id string, props *AwsCdk
 		Value:       elasticBeanstalkApp.AttrEndpointUrl(),
 		Description: jsii.String("The URL of the Elastic Beanstalk Application"),
 	})
-
 	appVersion.AddDependency(app)
 	return stack
 }
