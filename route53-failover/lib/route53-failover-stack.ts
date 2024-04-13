@@ -15,6 +15,6 @@ export class Route53FailoverStack extends cdk.Stack {
     new EC2InstanceConstruct(this, "EC2FailOverInstanceConstruct", {
       vpc: this.targetVpc
     })
-    new FailOverS3Bucket(this, "FailOverS3BucketThing")
+    new FailOverS3Bucket(this, "FailOverS3Bucket")
   }
 }
