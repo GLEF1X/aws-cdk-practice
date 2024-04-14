@@ -2,6 +2,8 @@ import {Construct} from "constructs";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as s3Deployment from "aws-cdk-lib/aws-s3-deployment";
 import * as path from "node:path";
+import * as cdk from "aws-cdk-lib";
+import {RemovalPolicy} from "aws-cdk-lib";
 
 export class FailOverS3Bucket extends Construct {
   constructor(scope: Construct, id: string) {
@@ -17,12 +19,19 @@ export class FailOverS3Bucket extends Construct {
         ignorePublicAcls: false
       }),
       versioned: true,
-      bucketName: 'www.worldwideapex.com'
+      bucketName: 'www.worldwideapex.com',
+      autoDeleteObjects: true,
+      removalPolicy: RemovalPolicy.DESTROY
     })
     
     new s3Deployment.BucketDeployment(scope, "FailOverS3BucketDeployment", {
       sources: [s3Deployment.Source.asset(path.resolve(__dirname, 'data'))],
       destinationBucket: bucket
-    })
+    });
+
+
+    new cdk.CfnOutput(this, 'BucketWebsiteUrl', {
+      value: bucket.bucketWebsiteUrl
+    });
   }
 }

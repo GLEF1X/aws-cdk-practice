@@ -1,8 +1,9 @@
-import {Duration, Stack} from "aws-cdk-lib";
+import {CfnOutput, Duration, Stack} from "aws-cdk-lib";
 import {Construct} from "constructs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
-import * as iam from "aws-cdk-lib/aws-iam";
 import {CloudFormationInit, InstanceClass, InstanceSize, InstanceType, MachineImage} from "aws-cdk-lib/aws-ec2";
+import * as iam from "aws-cdk-lib/aws-iam";
+import {SubnetType} from "aws-cdk-lib/aws-ec2";
 
 export interface EC2InstanceConstructProps {
   vpc: ec2.Vpc
@@ -38,12 +39,15 @@ export class EC2InstanceConstruct extends Construct {
       ],
     });
 
-    new ec2.Instance(this, "MainInstance", {
+    const ec2Instance = new ec2.Instance(this, "MainInstance", {
       vpc: vpc,
       allowAllOutbound: true,
       instanceType: InstanceType.of(InstanceClass.T2, InstanceSize.MICRO),
       machineImage: MachineImage.latestAmazonLinux2023(),
       securityGroup: ec2InstanceSecurityGroup,
+      vpcSubnets: {
+        subnetType: SubnetType.PUBLIC,
+      },
       init: CloudFormationInit.fromConfigSets({
         configSets: {
           default: ['initial', 'install_httpd', 'start']
@@ -72,6 +76,14 @@ export class EC2InstanceConstruct extends Construct {
         printLog: true,
       },
       role: serverRole,
-    })
+    });
+
+    new CfnOutput(this, 'ssmCommand', {
+      value: `aws ssm start-session --target ${ec2Instance.instanceId}`,
+    });
+
+    new CfnOutput(this, 'sshCommand', {
+      value: `ssh ec2-user@${ec2Instance.instancePublicDnsName}`,
+    });
   }
 }
